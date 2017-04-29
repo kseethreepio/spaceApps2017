@@ -49,8 +49,11 @@ def main():
 
         # Update LCD output
         myLcd.setCursor(1,0)  # Move cursor to next line
-        if celsius > 25:  # If it gets above 24 C, turn screen red
+        if celsius >= 25:  # If it gets above 24 C, turn screen red
             myLcd.setColor(255, 0, 0)
+            myLcd.write(tempString)
+        elif (celsius == 24):
+            myLcd.setColor(0, 255, 0)
             myLcd.write(tempString)
         else:  # TODO: Is there a getColor method?
             myLcd.setColor(0, 0, 255)
