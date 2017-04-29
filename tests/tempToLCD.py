@@ -33,7 +33,6 @@ def main():
     myLcd.setCursor(0,0)  # Set LCD cursory to write out the top line
     myLcd.setColor(0, 0, 255)  # By default, set LCD color to blue
     myLcd.write("Current temp:")  # Write out label for temperature
-    myLcd.setCursor(1,0)  # Move cursor to next line
 
     # Create the temperature sensor object using AIO pin 0
     temp = grove.GroveTemp(0)
@@ -49,6 +48,7 @@ def main():
         tempString = "%s C / %s F" % (celsius, fahrenheit)
 
         # Update LCD output
+        myLcd.setCursor(1,0)  # Move cursor to next line
         if celsius > 25:  # If it gets above 24 C, turn screen red
             myLcd.setColor(255, 0, 0)
             myLcd.write(tempString)
