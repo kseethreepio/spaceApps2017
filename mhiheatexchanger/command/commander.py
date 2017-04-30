@@ -127,65 +127,69 @@ class MissionControl(object):
 		used to optimize the heat exchange between hot/cold sensor areas.
 		'''
 
-		alert_to_process = self.alert_queue.pop(0)
-		print("Processing sensor alert...")
-		sensor_to_help = alert_to_process['sensor']
-		sensor_ask = alert_to_process['signal']
-		sensor_temp_c = sensor_to_help.latest_temp_c
+		if len(self.alert_queue) == 0:
+			print(NO_WORK_MSG)
 
-		if sensor_ask == CENTRAL_CMD_MESSAGE_HAPPY:
-			closeAssistingSensorValves(sensor_to_help)
-			return True
+		elif len(self.alert_queue) > 0:
+			alert_to_process = self.alert_queue.pop(0)
+			print("Processing sensor alert...")
+			sensor_to_help = alert_to_process['sensor']
+			sensor_ask = alert_to_process['signal']
+			sensor_temp_c = sensor_to_help.latest_temp_c
 
-		# If the sensor temp is too high, find first sensor with lower temp
-		elif sensor_ask == CENTRAL_CMD_MESSAGE_HOT:
-			print(ALERT_SENSOR_HOT.format(sensor_to_help.sensor_id))
-			for active_sensor in self.connected_sensors:
-				# Skip the current sensor being helped
-				if active_sensor.sensor_id == sensor_to_help.sensor_id:
-					active_sensor = None
-					pass
-				else:
-					if active_sensor.latest_temp_c < sensor_temp_c:
-						print(ALERT_FOUND_HELPER_SENSOR.format(active_sensor.sensor_id))
-						self.sendCommandToSensor(sensor_to_help, 'open_valve')
-						self.sendCommandToSensor(active_sensor, 'open_valve')
+			if sensor_ask == CENTRAL_CMD_MESSAGE_HAPPY:
+				closeAssistingSensorValves(sensor_to_help)
+				return True
 
-					else:
+			# If the sensor temp is too high, find first sensor with lower temp
+			elif sensor_ask == CENTRAL_CMD_MESSAGE_HOT:
+				print(ALERT_SENSOR_HOT.format(sensor_to_help.sensor_id))
+				for active_sensor in self.connected_sensors:
+					# Skip the current sensor being helped
+					if active_sensor.sensor_id == sensor_to_help.sensor_id:
 						active_sensor = None
-
-		# Else if sensor temp is too low, find sensor with higher temp
-		elif sensor_ask == CENTRAL_CMD_MESSAGE_COLD:
-			print(ALERT_SENSOR_COLD.format(sensor_to_help.sensor_id))
-			for active_sensor in self.connected_sensors:
-				# Skip the current sensor being helped
-				if active_sensor.sensor_id == sensor_to_help.sensor_id:
-					active_sensor = None
-					pass
-				else:
-					if active_sensor.latest_temp_c > sensor_temp_c:
-						print(ALERT_FOUND_HELPER_SENSOR.format(active_sensor.sensor_id))
-						self.sendCommandToSensor(sensor_to_help, 'open_valve')
-						self.sendCommandToSensor(active_sensor, 'open_valve')
-
+						pass
 					else:
+						if active_sensor.latest_temp_c < sensor_temp_c:
+							print(ALERT_FOUND_HELPER_SENSOR.format(active_sensor.sensor_id))
+							self.sendCommandToSensor(sensor_to_help, 'open_valve')
+							self.sendCommandToSensor(active_sensor, 'open_valve')
+
+						else:
+							active_sensor = None
+
+			# Else if sensor temp is too low, find sensor with higher temp
+			elif sensor_ask == CENTRAL_CMD_MESSAGE_COLD:
+				print(ALERT_SENSOR_COLD.format(sensor_to_help.sensor_id))
+				for active_sensor in self.connected_sensors:
+					# Skip the current sensor being helped
+					if active_sensor.sensor_id == sensor_to_help.sensor_id:
 						active_sensor = None
+						pass
+					else:
+						if active_sensor.latest_temp_c > sensor_temp_c:
+							print(ALERT_FOUND_HELPER_SENSOR.format(active_sensor.sensor_id))
+							self.sendCommandToSensor(sensor_to_help, 'open_valve')
+							self.sendCommandToSensor(active_sensor, 'open_valve')
 
-		if active_sensor:  # If a sensor helped out, update the 'sensor IOU' ledger
-			if sensor_to_help.sensor_id in self.favor_ledger.keys():
-				sensors_curr_helping = self.favor_ledger[sensor_to_help.sensor_id]		
-				if active_sensor.sensor_id not in sensors_curr_helping:
-					self.favor_ledger[sensor_to_help.sensor_id].append(active_sensor.sensor_id)
+						else:
+							active_sensor = None
 
+			if active_sensor:  # If a sensor helped out, update the 'sensor IOU' ledger
+				if sensor_to_help.sensor_id in self.favor_ledger.keys():
+					sensors_curr_helping = self.favor_ledger[sensor_to_help.sensor_id]		
+					if active_sensor.sensor_id not in sensors_curr_helping:
+						self.favor_ledger[sensor_to_help.sensor_id].append(active_sensor.sensor_id)
+
+				else:
+					self.favor_ledger[sensor_to_help.sensor_id] = [active_sensor.sensor_id]
+
+			print(ALERT_CHECK_FOR_MORE)
+			if len(alert_to_process) > 0:  # Check for more alerts to process
+				self.processAlertQueue()
 			else:
-				self.favor_ledger[sensor_to_help.sensor_id] = [active_sensor.sensor_id]
-
-		print(ALERT_CHECK_FOR_MORE)
-		if len(alert_to_process) > 0:  # Check for more alerts to process
-			self.processAlertQueue()
-		else:
-			print(ALERT_DONE_PROCESSING_QUEUE)
-			return True
+				print(ALERT_DONE_PROCESSING_QUEUE)
+				return True
 
 def main():
 	'''Main loop for executing command center. To quit, just kill the process
