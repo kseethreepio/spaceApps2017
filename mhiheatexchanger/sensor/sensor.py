@@ -54,6 +54,7 @@ CENTRAL_CMD_MESSAGE_HAPPY = "no_longer_past_threshold"
 
 ERROR_VALVE_OPEN = "ERROR: Valve already open."
 ERROR_VALVE_CLOSED = "ERROR: Valve already closed."
+HAPPY_SENSOR_MSG = "Sensor {0} temp is now normalized. Closing valve..."
 
 LOCAL_OUTPUT_PATH = os.path.join(os.path.expanduser("~"),"sensorTemps")
 LOCAL_OUTPUT_FILENAME = "{0}_{1}_{2}_sensorTemps.csv"
@@ -225,6 +226,7 @@ class Sensor(object):
             if not self.temp_sensor_only:
                 if self.has_passed_threshold and self.valve_open:
                     self.has_passed_threshold = False  # Reset the flag
+                    print(HAPPY_SENSOR_MSG.format(self.sensor_id))
                     self.closeValve()  # Now that temp has stabilized, close valve
 
                     # Also tell mission control that temp is now good, so that
