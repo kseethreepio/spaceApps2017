@@ -148,8 +148,8 @@ class MissionControl(object):
 				else:
 					if active_sensor.latest_temp_c < sensor_temp_c:
 						print(ALERT_FOUND_HELPER_SENSOR.format(active_sensor.sensor_id))
-						sendCommandToSensor(sensor_to_help, 'open_valve')
-						sendCommandToSensor(active_sensor, 'open_valve')
+						self.sendCommandToSensor(sensor_to_help, 'open_valve')
+						self.sendCommandToSensor(active_sensor, 'open_valve')
 
 					else:
 						active_sensor = None
@@ -165,8 +165,8 @@ class MissionControl(object):
 				else:
 					if active_sensor.latest_temp_c > sensor_temp_c:
 						print(ALERT_FOUND_HELPER_SENSOR.format(active_sensor.sensor_id))
-						sendCommandToSensor(sensor_to_help, 'open_valve')
-						sendCommandToSensor(active_sensor, 'open_valve')
+						self.sendCommandToSensor(sensor_to_help, 'open_valve')
+						self.sendCommandToSensor(active_sensor, 'open_valve')
 
 					else:
 						active_sensor = None
