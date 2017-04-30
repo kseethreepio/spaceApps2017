@@ -27,7 +27,7 @@ from upm import pyupm_grove as grove
 
 def main():
     # Create the temperature sensor object using AIO pin 0
-    temp = grove.GroveTemp(0)
+    temp = grove.GroveTemp(3)
     print(temp.name())
 
     # Read the temperature ten times, printing both the Celsius and
