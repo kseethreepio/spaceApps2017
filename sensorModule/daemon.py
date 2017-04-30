@@ -82,7 +82,7 @@ def handleUpperThresholdPassed(tempObj, lcdObj):
 def handleLowerThresholdPassed(tempObj, lcdObj):
     '''Handles case where runTempCheck() determines lower temp threshold passed.'''
 
-    lcdObj.setColor(0, 255, 0)
+    lcdObj.setColor(0, 0, 255)
     lcdObj.write(TEMP_STRING.format(tempObj.value(), tempObj.fahrenheit))
 
     # TODO: Signal central module that lower threshold passed
@@ -105,7 +105,7 @@ def runTempCheck(tempObj, lcdObj):
     elif (celsius < LTHRESHOLD):
         handleLowerThresholdPassed(tempObj, lcdObj)
     else:
-        lcdObj.setColor(0, 0, 255)
+        lcdObj.setColor(0, 255, 0)
         lcdObj.write(TEMP_STRING.format(tempObj.value(), tempObj.fahrenheit))
 
     return False
