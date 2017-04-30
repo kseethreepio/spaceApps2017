@@ -28,8 +28,8 @@ import time, sys, signal, atexit
 from upm import pyupm_uln200xa as upmULN200XA
 from upm import pyupm_grove as grove
 
-HTHRESHOLD = 30
-LTHRESHOLD = 20
+HTHRESHOLD = 20
+#LTHRESHOLD = 20
 def main():
     # Create the temperature sensor object using AIO pin 0
     temp1 = grove.GroveTemp(0)
