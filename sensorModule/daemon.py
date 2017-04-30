@@ -190,9 +190,7 @@ def main():
     del temp  # Delete the temperature sensor object
     prepScreen("stop", lcd)  # Turn off the display
 
-
-if __name__ == '__main__':
-    main()
+    # TEMP - Testing motor
     print("Done with temp check cycle.")
     print("Opening valve...")
     openValve()
@@ -200,3 +198,7 @@ if __name__ == '__main__':
     time.sleep(5)
     closeValve()
     print("Done.")
+
+
+if __name__ == '__main__':
+    main()
