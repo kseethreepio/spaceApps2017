@@ -22,26 +22,73 @@ from __future__ import print_function
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import time
+
+from __future__ import print_function
+import time, sys, signal, atexit
+from upm import pyupm_uln200xa as upmULN200XA
 from upm import pyupm_grove as grove
 
+HTHRESHOLD = 30
+LTHRESHOLD = 20
 def main():
     # Create the temperature sensor object using AIO pin 0
     temp1 = grove.GroveTemp(0)
     temp3 = grove.GroveTemp(3)
     print(temp1.name())
 
+    # Instantiate a Stepper motor on a ULN200XA Darlington Motor Driver
+    # This was tested with the Grove Geared Step Motor with Driver
+
+    # Instantiate a ULN2003XA stepper object
+    myUln200xa = upmULN200XA.ULN200XA(4096, 8, 9, 10, 11)
+
+    ## Exit handlers ##
+    # This stops python from printing a stacktrace when you hit control-C
+    def SIGINTHandler(signum, frame):
+        raise SystemExit
+
+    # This lets you run code on exit,
+    # including functions from myUln200xa
+    def exitHandler():
+        print("Exiting")
+        sys.exit(0)
+    
+    # Register exit handlers
+    atexit.register(exitHandler)
+    signal.signal(signal.SIGINT, SIGINTHandler)
+    
+    
+    myUln200xa.setSpeed(5) # 5 RPMs
+    myUln200xa.setDirection(upmULN200XA.ULN200XA_DIR_CW)
+    
     # Read the temperature ten times, printing both the Celsius and
     # equivalent Fahrenheit temperature, waiting one second between readings
     for i in range(0, 10):
-        celsius = temp1.value() - temp3.value()
+        celsius = temp1.value()
         fahrenheit = celsius * 9.0/5.0 + 32.0;
         print("%d degrees Celsius, or %d degrees Fahrenheit" \
             % (celsius, fahrenheit))
-        time.sleep(1)
+        if celsius > HTHRESHOLD:
+            myUln200xa.stepperSteps(4096)
+        time.sleep(5)
 
     # Delete the temperature sensor object
     del temp
+
+    #print("Rotating 1 revolution clockwise.")
+    #myUln200xa.stepperSteps(4096)
+
+    #print("Sleeping for 2 seconds...")
+    #time.sleep(2)
+
+    #print("Rotating 1/2 revolution counter clockwise.")
+    #myUln200xa.setDirection(upmULN200XA.ULN200XA_DIR_CCW)
+    #myUln200xa.stepperSteps(2048)
+
+    # release
+    myUln200xa.release()
+
+    # exitHandler is called automatically
 
 if __name__ == '__main__':
     main()
