@@ -47,17 +47,17 @@ def prepScreen(command, lcdObj=None):
 
     if command == 'start':
         # Initialize Jhd1313m1 at 0x3E (LCD_ADDRESS) and 0x62 (RGB_ADDRESS)
-        myLcd = lcd.Jhd1313m1(0, 0x3E, 0x62)
-        myLcd.clear()        
-        myLcd.displayOn()
-        myLcd.backlightOn()
+        lcdObj = lcd.Jhd1313m1(0, 0x3E, 0x62)
+        lcdObj.clear()        
+        lcdObj.displayOn()
+        lcdObj.backlightOn()
 
         # Write initial message to LCD
-        myLcd.setCursor(0,0)  # Set LCD cursory to write out the top line
-        myLcd.setColor(0, 0, 255)  # By default, set LCD color to blue
-        myLcd.write("Current temp:")  # Write out label for temperature
+        lcdObj.setCursor(0,0)  # Set LCD cursory to write out the top line
+        lcdObj.setColor(0, 0, 255)  # By default, set LCD color to blue
+        lcdObj.write("Current temp:")  # Write out label for temperature
 
-        return myLcd
+        return lcdObj
 
     elif command == 'stop':  # Turn off the display
         # Clear messages from LCD and put into lower-power mode
@@ -71,8 +71,8 @@ def prepScreen(command, lcdObj=None):
 def handleUpperThresholdPassed(tempObj, lcdObj):
     '''Handles case where runTempCheck() determines upper temp threshold passed.'''
 
-    myLcd.setColor(255, 0, 0)
-    myLcd.write(TEMP_STRING.format(tempObj.value(), tempObj.fahrenheit))
+    lcdObj.setColor(255, 0, 0)
+    lcdObj.write(TEMP_STRING.format(tempObj.value(), tempObj.fahrenheit))
 
     # TODO: Signal central module that upper threshold passed
 
@@ -82,8 +82,8 @@ def handleUpperThresholdPassed(tempObj, lcdObj):
 def handleLowerThresholdPassed(tempObj, lcdObj):
     '''Handles case where runTempCheck() determines lower temp threshold passed.'''
 
-    myLcd.setColor(0, 255, 0)
-    myLcd.write(TEMP_STRING.format(tempObj.value(), tempObj.fahrenheit))
+    lcdObj.setColor(0, 255, 0)
+    lcdObj.write(TEMP_STRING.format(tempObj.value(), tempObj.fahrenheit))
 
     # TODO: Signal central module that lower threshold passed
 
@@ -97,15 +97,16 @@ def runTempCheck(temp):
     fahrenheit = celsius * 9.0/5.0 + 32.0;
     temp.fahrenheit = fahrenheit  # temp obj appears to be mutable; storing F val
 
-    # Update LCD output
-    myLcd.setCursor(1,0)  # Move cursor to next line
-    if celsius >= UTHRESHOLD:  # If it gets above 24 C, turn screen red
-        handleUpperThresholdPassed(temp, myLcd)
+    lcdObj.setCursor(1,0)  # Move cursor to next line, to write out temp
+
+    # Check whether temp has passed upper or lower threshold
+    if celsius >= UTHRESHOLD:
+        handleUpperThresholdPassed(temp, lcdObj)
     elif (celsius < LTHRESHOLD):
-        handleLowerThresholdPassed(temp, myLcd)
+        handleLowerThresholdPassed(temp, lcdObj)
     else:
-        myLcd.setColor(0, 0, 255)
-        myLcd.write(TEMP_STRING.format(tempObj.value(), tempObj.fahrenheit))
+        lcdObj.setColor(0, 0, 255)
+        lcdObj.write(TEMP_STRING.format(tempObj.value(), tempObj.fahrenheit))
 
     return False
 
@@ -131,7 +132,7 @@ def closeValve():
 def main():
     '''Main loop.'''
 
-    myLcd = prepScreen("start")  # Start up the LCD
+    lcdObj = prepScreen("start")  # Start up the LCD
     temp = grove.GroveTemp(0)  # Create the temperature sensor obj via AIO pin 0
 
     # Read temperature, waiting 1 s between readings, providing temp in deg C/F
@@ -149,7 +150,7 @@ def main():
 
     # Teardown/cleanup
     del temp  # Delete the temperature sensor object
-    prepScreen("stop", myLcd)  # Turn off the display
+    prepScreen("stop", lcdObj)  # Turn off the display
 
 
 if __name__ == '__main__':
