@@ -33,7 +33,7 @@ from upm import pyupm_grove as grove
 from upm import pyupm_jhd1313m1 as lcd
 
 UTHRESHOLD = 25  # Deg C
-LTHRESHOLD = 24  # Deg C
+LTHRESHOLD = 16  # Deg C
 
 TEMP_STRING = "{0} C / {1} F"
 
