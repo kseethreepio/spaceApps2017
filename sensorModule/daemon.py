@@ -113,7 +113,7 @@ def runTempCheck(tempObj, lcdObj):
         lcdObj.setColor(0, 255, 0)
         lcdObj.write(TEMP_STRING.format(tempObj.value(), tempObj.fahrenheit))
 
-    return False
+    return True
 
 
 def SIGINTHandler(signum, frame):
@@ -174,14 +174,14 @@ def main():
     # Read temperature, waiting 1 s between readings, providing temp in deg C/F
     if not DEBUG:  # In standard operating mode, run indefinitely
         while True:
-            runTempCheck(temp, lcd, motor)
+            runTempCheck(temp, lcd)
             # TODO: Handle signal from central module to activate motor/open value
             time.sleep(POLL_INTERVAL)
 
     elif DEBUG:  # Run temp check loop for TEST_RUN_LENGTH seconds
         print("Starting temp check cycle...")
         for i in range(0, TEST_RUN_LENGTH / POLL_INTERVAL):
-            runTempCheck(temp, lcd, motor)
+            runTempCheck(temp, lcd)
             # TODO: Handle signal from central module to activate motor/open value
             print("Sleeping till next temp check...")
             time.sleep(POLL_INTERVAL)
