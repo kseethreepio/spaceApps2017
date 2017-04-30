@@ -66,12 +66,12 @@ class MissionControl(object):
 
 			# Otherwise, set up as a sensor module matching the HW schematic
 			else:
-				self.connected_sensors.append(Sensor(\
+				self.connected_sensors.append(Sensor(self, \
 					sensor['sensor_room'], sensor['sensor_name'], \
 					sensor['sensor_id'], sensor['temp_sensor_pin']))
 
 		# Now, start the temp check loop on each active sensor
-		for active_sensor in connected_sensors:
+		for active_sensor in self.connected_sensors:
 			active_sensor.startSensor()
 
 	@staticmethod

@@ -90,6 +90,7 @@ class Sensor(object):
         self.sensor_name = sensor_name
         self.sensor_id = sensor_id
         self.temp_sensor_pin = temp_sensor_pin
+        self.temp_sensor_only = temp_sensor_only
         self.latest_temp_c = None
         self.latest_temp_f = None
         self.has_passed_threshold = False
