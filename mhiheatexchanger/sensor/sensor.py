@@ -43,12 +43,15 @@ TEMP_STRING = "{0} C / {1} F"
 STEPPER_SPEED = 8  # RPMs
 STEPPER_STEPS = 4096
 
-POLL_INTERVAL = 2  # Seconds
-TEST_RUN_LENGTH = 90  # Seconds; if running code for finite time for testing
+POLL_INTERVAL = 10  # Seconds
+TEST_RUN_LENGTH = 120  # Seconds; if running code for finite time for testing
 DEBUG = True  # For running sensor in test mode (i.e. for finite period of time)
 
 CENTRAL_CMD_MESSAGE_COLD = "lower_threshold_passed"
 CENTRAL_CMD_MESSAGE_HOT = "upper_threshold_passed"
+
+ERROR_VALVE_OPEN = "ERROR: Valve already open."
+ERROR_VALVE_CLOSED = "ERROR: Valve already closed."
 
 LOCAL_OUTPUT_PATH = os.path.join(os.path.expanduser("~"),"sensorTemps")
 LOCAL_OUTPUT_FILENAME = "{0}_{1}_{2}_sensorTemps.csv"
@@ -61,7 +64,7 @@ class Sensor(Object):
     reading (in degrees C and F).
     '''
 
-    def __init__(self, sensor_room, sensor_name, sensor_id, \
+    def __init__(self, commander, sensor_room, sensor_name, sensor_id, \
         temp_sensor_pin, temp_sensor_only=False):
         '''Init method for Sensor object.
 
@@ -69,6 +72,8 @@ class Sensor(Object):
         uppoer or lower threshold (to help track whether to evaluate calling 
         closeValve()).
 
+        :param CentralCommand commander: CentralCommand object instance that 
+            started the sensor.
         :param str sensor_room: Room name where physical sensor HW module is located.
         :param str sensor_name: Name of individual sensor HW module in the room.
         :param int temp_sensor_pin: AIO pin that temp sensor is on (typically 0).
@@ -78,6 +83,7 @@ class Sensor(Object):
         :return: Sensor object
         '''
 
+        self.commander = commander
         self.sensor_room = sensor_room
         self.sensor_name = sensor_name
         self.sensor_id = sensor_id
@@ -225,36 +231,51 @@ class Sensor(Object):
 
     @staticmethod
     def respondToCentralCommand(self, orders):
-        '''Handles message/command from central module to open valve. For now,
-        only expected orders are to open the valve.
-        '''
+        '''Handles message/command from central module to open valve.'''
 
         if orders == 'open_valve':
             openValve()
+
+        elif orders == 'close_valve':
+            closeValve()
 
         return True
 
     def sendSignalToCentralCommand(self, signal):
         '''Sends message to central command indicating that threshold passed.'''
 
-        # TODO
+        request = {
+            'sensor': self,
+            'signal': signal
+        }
 
-        return signal
+        commander.receiveRequestFromSensor(request)
+
+        return True
 
     def openValve(self):
         '''Activates stepper motor in order to open valve for heat transfer.'''
 
-        self.stepperMotor.setDirection(upmULN200XA.ULN200XA_DIR_CW)
-        self.stepperMotor.stepperSteps(STEPPER_STEPS)
-        self.valve_open = True
+        if not self.valve_open:
+            self.stepperMotor.setDirection(upmULN200XA.ULN200XA_DIR_CW)
+            self.stepperMotor.stepperSteps(STEPPER_STEPS)
+            self.valve_open = True
+        else:
+            print(ERROR_VALVE_OPEN)
+            return False
 
         return True
 
     def closeValve(self):
         '''Activates stepper motor in order to close valve after heat transfer.'''
 
-        self.stepperMotor.setDirection(upmULN200XA.ULN200XA_DIR_CCW)
-        self.stepperMotor.stepperSteps(STEPPER_STEPS)
+        if self.valve_open:
+            self.stepperMotor.setDirection(upmULN200XA.ULN200XA_DIR_CCW)
+            self.stepperMotor.stepperSteps(STEPPER_STEPS)
+            self.valve_open = False
+        else:
+            print(ERROR_VALVE_CLOSED)
+            return False
 
         return True
 
