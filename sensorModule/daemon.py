@@ -54,7 +54,7 @@ def prepScreen(command, lcdObj=None):
 
         # Write initial message to LCD
         lcdObj.setCursor(0,0)  # Set LCD cursory to write out the top line
-        lcdObj.setColor(0, 0, 255)  # By default, set LCD color to blue
+        lcdObj.setColor(0, 0, 0)  # By default, set LCD color to white
         lcdObj.write("Current temp:")  # Write out label for temperature
 
         return lcdObj
