@@ -193,10 +193,10 @@ def main():
     # TEMP - Testing motor
     print("Done with temp check cycle.")
     print("Opening valve...")
-    openValve()
+    openValve(motor)
     print("Changing directions...")
     time.sleep(5)
-    closeValve()
+    closeValve(motor)
     print("Done.")
 
 
