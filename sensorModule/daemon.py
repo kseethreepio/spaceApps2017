@@ -33,7 +33,7 @@ from upm import pyupm_jhd1313m1 as lcd
 UTHRESHOLD = 25
 LTHRESHOLD = 24
 
-def prepScreen(command):
+def prepScreen(command, lcdObj=None):
     '''Function for clearing and turning the screen on/off
     '''
 
@@ -47,9 +47,9 @@ def prepScreen(command):
         return myLcd
 
     elif command == 'stop':  # Turn off the display (conserve power)
-        myLcd.clear()
-        myLcd.displayOff()
-        myLcd.backlightOff()
+        lcdObj.clear()
+        lcdObj.displayOff()
+        lcdObj.backlightOff()
 
         return False
 
@@ -91,7 +91,7 @@ def main():
     del temp
 
     # Turn off the display
-    prepScreen("stop")
+    prepScreen("stop", myLcd)
 
 if __name__ == '__main__':
     main()
