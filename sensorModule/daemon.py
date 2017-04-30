@@ -33,10 +33,29 @@ from upm import pyupm_jhd1313m1 as lcd
 UTHRESHOLD = 25
 LTHRESHOLD = 24
 
-def main():
-    # Initialize Jhd1313m1 at 0x3E (LCD_ADDRESS) and 0x62 (RGB_ADDRESS)
-    myLcd = lcd.Jhd1313m1(0, 0x3E, 0x62)
+def prepScreen(command):
+    '''Function for clearing and turning the screen on/off
+    '''
 
+    if command == 'start':
+        # Initialize Jhd1313m1 at 0x3E (LCD_ADDRESS) and 0x62 (RGB_ADDRESS)
+        myLcd = lcd.Jhd1313m1(0, 0x3E, 0x62)
+        myLcd.clear()        
+        myLcd.displayOn()
+        myLcd.backlightOn()
+
+        return myLcd
+
+    elif command == 'stop':  # Turn off the display (conserve power)
+        myLcd.clear()
+        myLcd.displayOff()
+        myLcd.backlightOff()
+
+        return False
+
+def main():
+    # Start up the LCD
+    myLcd = prepScreen("start")
     myLcd.setCursor(0,0)  # Set LCD cursory to write out the top line
     myLcd.setColor(0, 0, 255)  # By default, set LCD color to blue
     myLcd.write("Current temp:")  # Write out label for temperature
@@ -70,6 +89,9 @@ def main():
 
     # Delete the temperature sensor object
     del temp
+
+    # Turn off the display
+    prepScreen("stop")
 
 if __name__ == '__main__':
     main()
