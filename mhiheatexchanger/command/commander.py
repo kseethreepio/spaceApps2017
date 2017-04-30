@@ -93,7 +93,7 @@ class MissionControl(object):
 	def sendCommandToSensor(self, sensor, command):
 		'''Sends command/orders to a given sensor.'''
 
-		sensor.respondToMissionControl(command)
+		sensor.respondToMissionControl(sensor, command)
 
 		return True
 
@@ -103,10 +103,10 @@ class MissionControl(object):
 				assisting_sensor = self.favor_ledger[sensor_to_help.sensor_id].pop(0)
 				print(ALERT_CLOSING_HELPER_VALVE.\
 					format(sensor_to_help.sensor_id, assisting_sensor.sensor_id))
-				sendCommandToSensor(assisting_sensor, 'close_valve')
+				self.sendCommandToSensor(assisting_sensor, 'close_valve')
 
 				if len(self.favor_ledger[sensor_to_help.sensor_id]) > 0:
-					closeAssistingSensorValves(sensor_to_help)
+					self.closeAssistingSensorValves(sensor_to_help)
 
 		return True
 
