@@ -17,6 +17,8 @@ ACTIVE_SENSORS = {
 	},
 }
 
+DEBUG = True
+
 class CentralCommand(Object):
 	'''Class for the central module that handles incoming requests from sensors,
 	and issues commands for opening valves connected to sensors in the system, for 
@@ -40,7 +42,7 @@ class CentralCommand(Object):
 				sensor['temp_sensor_pin']))
 
 		# Now, start the temp check loop on each active sensor
-
+		for 
 
 	@staticmethod
 	def receiveRequestFromSensor(self, request):
