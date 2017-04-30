@@ -46,6 +46,9 @@ POLL_INTERVAL = 2  # Seconds
 TEST_RUN_LENGTH = 30  # Seconds; if running code for finite time for testing
 DEBUG = True  # For running sensor in test mode (i.e. for finite period of time)
 
+CENTRAL_CMD_MESSAGE_COLD = "lower_threshold_passed"
+CENTRAL_CMD_MESSAGE_HOT = "upper_threshold_passed"
+
 
 class Sensor(Object):
     '''TODO'''
@@ -53,81 +56,78 @@ class Sensor(Object):
     def __init__(self, sensor_room, sensor_name):
         self.sensor_room = sensorRoom
         self.sensor_name = sensorName
-        self.latest_temp = None
+        self.latest_temp_c = None
+        self.latest_temp_f = None
 
         # Instantiate a Stepper motor on a ULN200XA Darlington Motor Driver
         # This was tested with the Grove Geared Step Motor with Driver
         # Instantiate a ULN2003XA stepper object
-        self.sensorValveMotor = upmULN200XA.ULN200XA(4096, 8, 9, 10, 11)
+        self.stepperMotor = upmULN200XA.ULN200XA(4096, 8, 9, 10, 11)
         atexit.register(self.exitHandler)  # Register exit handlers
         signal.signal(signal.SIGINT, self.SIGINTHandler)
-        self.sensorValveMotor.setSpeed(STEPPER_SPEED)
+        self.stepperMotor.setSpeed(STEPPER_SPEED)
 
         self.lcd = lcd.Jhd1313m1(0, 0x3E, 0x62)
-
         self.temp = grove.GroveTemp(TEMP_SENSOR_PIN)  # Create the temperature sensor obj via AIO pin 0
 
-    def prepScreen(self, command, lcdObj=None):
+    def prepScreen(self, command):
         '''Function for clearing and turning the screen on/off.'''
 
         if command == 'start':
             # Initialize Jhd1313m1 at 0x3E (LCD_ADDRESS) and 0x62 (RGB_ADDRESS)
-            lcdObj.clear()        
-            lcdObj.displayOn()
-            lcdObj.backlightOn()
+            self.lcd.clear()        
+            self.lcd.displayOn()
+            self.lcd.backlightOn()
 
             # Write initial message to LCD
-            lcdObj.setCursor(0,0)  # Set LCD cursory to write out the top line
-            lcdObj.setColor(0, 0, 0)  # By default, set LCD color to white
-            lcdObj.write("Current temp:")  # Write out label for temperature
+            self.lcd.setCursor(0,0)  # Set LCD cursory to write out the top line
+            self.lcd.setColor(0, 0, 0)  # By default, set LCD color to white
+            self.lcd.write("Current temp:")  # Write out label for temperature
 
             return True
 
         elif command == 'stop':  # Turn off the display
             # Clear messages from LCD and put into lower-power mode
-            lcdObj.clear()
-            lcdObj.displayOff()
-            lcdObj.backlightOff()
+            self.lcd.clear()
+            self.lcd.displayOff()
+            self.lcd.backlightOff()
 
             return True
 
-    def handleUpperThresholdPassed(self, tempObj, lcdObj):
+    def handleUpperThresholdPassed(self):
         '''Handles case where runTempCheck() determines upper temp threshold passed.'''
 
-        lcdObj.setColor(255, 0, 0)
-        lcdObj.write(TEMP_STRING.format(self.temp_c, self.temp_f))
+        self.lcd.setColor(255, 0, 0)
+        self.lcd.write(TEMP_STRING.format(self.temp_c, self.temp_f))
+        self.sendSignalToCentralCommand(CENTRAL_CMD_MESSAGE_HOT)
 
-        # TODO: Signal central module that upper threshold passed
+        return True
 
-        return False
-
-    def handleLowerThresholdPassed(self, tempObj, lcdObj):
+    def handleLowerThresholdPassed(self):
         '''Handles case where runTempCheck() determines lower temp threshold passed.'''
 
-        lcdObj.setColor(0, 0, 255)
-        lcdObj.write(TEMP_STRING.format(self.temp_c, self.temp_f))
+        self.lcd.setColor(0, 0, 255)
+        self.lcd.write(TEMP_STRING.format(self.temp_c, self.temp_f))
+        self.sendSignalToCentralCommand(CENTRAL_CMD_MESSAGE_COLD)
 
-        # TODO: Signal central module that lower threshold passed
+        return True
 
-        return False
-
-    def runTempCheck(self, tempObj, lcdObj):
+    def runTempCheck(self):
         '''Runs iteration of checking temperature sensor for current reading.'''
 
-        celsius = tempObj.value()
-        self.temp_c = celsius
-        self.temp_f = celsius * 9.0/5.0 + 32.0
+        self.latest_temp_c = self.temp.value()
+        self.latest_temp_f = self.latest_temp_c * 9.0/5.0 + 32.0
 
-        lcdObj.setCursor(1,0)  # Move cursor to next line, to write out temp
+        self.lcd.setCursor(1,0)  # Move cursor to next line, to write out temp
 
         # Check whether temp has passed upper or lower threshold
-        if celsius >= UTHRESHOLD:
-            handleUpperThresholdPassed(tempObj, lcdObj)
-        elif celsius < LTHRESHOLD:
-            handleLowerThresholdPassed(tempObj, lcdObj)
+        if self.latest_temp_c >= UTHRESHOLD:
+            handleUpperThresholdPassed()
+        elif self.latest_temp_c < LTHRESHOLD:
+            handleLowerThresholdPassed()
         else:
-            lcdObj.setColor(0, 255, 0)
-            lcdObj.write(TEMP_STRING.format(self.temp_c, self.temp_f))
+            self.lcd.setColor(0, 255, 0)
+            self.lcd.write(TEMP_STRING.format(self.latest_temp_c, self.latest_temp_f))
 
         return True
 
@@ -152,19 +152,39 @@ class Sensor(Object):
 
         return True
 
-    def openValve(self, stepperObj):
+    def sendSignalToCentralCommand(self, signal):
+        '''Sends message to central command indicating that threshold passed.'''
+
+        # TODO
+
+        return signal
+
+    def openValve(self):
         '''Activates stepper motor in order to open valve for heat transfer.'''
 
-        stepperObj.setDirection(upmULN200XA.ULN200XA_DIR_CW)
-        stepperObj.stepperSteps(4096)
+        self.stepperMotor.setDirection(upmULN200XA.ULN200XA_DIR_CW)
+        self.stepperMotor.stepperSteps(STEPPER_STEPS)
 
         return True
 
-    def closeValve(self, stepperObj):
+    def closeValve(self):
         '''Activates stepper motor in order to close valve after heat transfer.'''
 
-        stepperObj.setDirection(upmULN200XA.ULN200XA_DIR_CCW)
-        stepperObj.stepperSteps(4096)
+        self.stepperMotor.setDirection(upmULN200XA.ULN200XA_DIR_CCW)
+        self.stepperMotor.stepperSteps(STEPPER_STEPS)
+
+        return True
+
+    def testMotor(self):
+        '''Test function for trying out the sensor module's motor.'''
+
+        print("Done with temp check cycle.")
+        print("Opening valve...")
+        self.openValve()
+        print("Changing directions...")
+        time.sleep(5)
+        self.closeValve()
+        print("Done.")
 
         return True
 
@@ -179,30 +199,22 @@ def main():
     # Read temperature, waiting 1 s between readings, providing temp in deg C/F
     if not DEBUG:  # In standard operating mode, run indefinitely
         while True:
-            runTempCheck(temp, lcd)
+            sensor.runTempCheck()
             # TODO: Handle signal from central module to activate motor/open value
             time.sleep(POLL_INTERVAL)
 
     elif DEBUG:  # Run temp check loop for TEST_RUN_LENGTH seconds
         print("Starting temp check cycle...")
         for i in range(0, TEST_RUN_LENGTH / POLL_INTERVAL):
-            runTempCheck(temp, lcd)
+            sensor.runTempCheck(temp, lcd)
             # TODO: Handle signal from central module to activate motor/open value
             print("Sleeping till next temp check...")
             time.sleep(POLL_INTERVAL)
 
     # Teardown/cleanup
     del temp  # Delete the temperature sensor object
-    prepScreen("stop", lcd)  # Turn off the display
-
-    # TEMP - Testing motor
-    print("Done with temp check cycle.")
-    print("Opening valve...")
-    openValve(motor)
-    print("Changing directions...")
-    time.sleep(5)
-    closeValve(motor)
-    print("Done.")
+    sensor.prepScreen("stop")  # Turn off the display
+    sensor.testMotor()  # FOR DEMO - Run motor test
 
 
 if __name__ == '__main__':
