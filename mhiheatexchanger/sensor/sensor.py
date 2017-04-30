@@ -37,7 +37,7 @@ from upm import pyupm_jhd1313m1 as lcd
 from upm import pyupm_uln200xa as upmULN200XA
 
 UTHRESHOLD = 24  # Deg C
-LTHRESHOLD = 16  # Deg C
+LTHRESHOLD = 20  # Deg C
 TEMP_LABEL_STRING = "Current temp:"
 TEMP_STRING = "{0} C / {1} F"
 
@@ -273,7 +273,7 @@ class Sensor(object):
     def openValve(self):
         '''Activates stepper motor in order to open valve for heat transfer.'''
 
-        if not self.valve_open and not waiting:
+        if not self.valve_open:
             self.stepperMotor.setDirection(upmULN200XA.ULN200XA_DIR_CW)
             self.stepperMotor.stepperSteps(STEPPER_STEPS)
             self.valve_open = True
