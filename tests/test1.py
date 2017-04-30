@@ -29,7 +29,7 @@ def main():
     # Create the temperature sensor object using AIO pin 0
     temp1 = grove.GroveTemp(0)
     temp3 = grove.GroveTemp(3)
-    print(temp.name())
+    print(temp1.name())
 
     # Read the temperature ten times, printing both the Celsius and
     # equivalent Fahrenheit temperature, waiting one second between readings
