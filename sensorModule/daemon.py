@@ -28,14 +28,19 @@ from __future__ import print_function
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import time
+import time, sys, signal, atexit
+
 from upm import pyupm_grove as grove
 from upm import pyupm_jhd1313m1 as lcd
+from upm import pyupm_uln200xa as upmULN200XA
 
 UTHRESHOLD = 25  # Deg C
 LTHRESHOLD = 16  # Deg C
 
 TEMP_STRING = "{0} C / {1} F"
+
+STEPPER_SPEED = 8  # RPMs
+STEPPER_STEPS = 4096
 
 POLL_INTERVAL = 2  # Seconds
 TEST_RUN_LENGTH = 30  # Seconds; if running code for finite time for testing
@@ -111,22 +116,45 @@ def runTempCheck(tempObj, lcdObj):
     return False
 
 
-def respondToCentralCommand():
+def SIGINTHandler(signum, frame):
+    '''This stops Python from printing a stacktrace when you hit control-C.'''
+    raise SystemExit
+
+
+def exitHandler():
+    '''This lets you run code on exit, including functions from myUln200xa.'''
+    print("Exiting")
+    sys.exit(0)
+
+
+def respondToCentralCommand(orders):
     '''Handles message/command from central module to open valve.'''
 
-    return False
+    if orders == 'open_valve':
+        openValve()
+
+    elif orders == 'close_valve':
+        close_valve()
+
+    return True
 
 
-def openValve():
+def openValve(stepperObj):
     '''Activates stepper motor in order to open valve for heat transfer.'''
 
-    return False
+    stepperObj.setDirection(upmULN200XA.ULN200XA_DIR_CW)
+    stepperObj.stepperSteps(4096)
+
+    return True
 
 
 def closeValve():
     '''Activates stepper motor in order to close valve after heat transfer.'''
 
-    return False
+    stepperObj.setDirection(upmULN200XA.ULN200XA_DIR_CCW)
+    stepperObj.stepperSteps(4096)
+
+    return True
 
 
 def main():
@@ -135,17 +163,27 @@ def main():
     lcd = prepScreen("start")  # Start up the LCD
     temp = grove.GroveTemp(0)  # Create the temperature sensor obj via AIO pin 0
 
+    # Instantiate a Stepper motor on a ULN200XA Darlington Motor Driver
+    # This was tested with the Grove Geared Step Motor with Driver
+    # Instantiate a ULN2003XA stepper object
+    motor = upmULN200XA.ULN200XA(4096, 8, 9, 10, 11)
+    atexit.register(exitHandler)  # Register exit handlers
+    signal.signal(signal.SIGINT, SIGINTHandler)
+    motor.setSpeed(STEPPER_SPEED)
+
     # Read temperature, waiting 1 s between readings, providing temp in deg C/F
     if not DEBUG:  # In standard operating mode, run indefinitely
         while True:
-            runTempCheck(temp)
+            runTempCheck(temp, lcd, motor)
             # TODO: Handle signal from central module to activate motor/open value
             time.sleep(POLL_INTERVAL)
 
     elif DEBUG:  # Run temp check loop for TEST_RUN_LENGTH seconds
+        print("Starting temp check cycle...")
         for i in range(0, TEST_RUN_LENGTH / POLL_INTERVAL):
-            runTempCheck(temp, lcd)
+            runTempCheck(temp, lcd, motor)
             # TODO: Handle signal from central module to activate motor/open value
+            print("Sleeping till next temp check...")
             time.sleep(POLL_INTERVAL)
 
     # Teardown/cleanup
@@ -155,3 +193,10 @@ def main():
 
 if __name__ == '__main__':
     main()
+    print("Done with temp check cycle.")
+    print("Opening valve...")
+    open_valve()
+    print("Changing directions...")
+    time.sleep(5)
+    close_valve()
+    print("Done.")
