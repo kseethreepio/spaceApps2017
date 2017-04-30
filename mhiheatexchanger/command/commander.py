@@ -102,8 +102,10 @@ class MissionControl(object):
 			if len(self.favor_ledger[sensor_to_help.sensor_id]) > 0:
 				assisting_sensor = self.favor_ledger[sensor_to_help.sensor_id].pop(0)
 				print(ALERT_CLOSING_HELPER_VALVE.\
-					format(sensor_to_help.sensor_id, assisting_sensor.sensor_id))
-				self.sendCommandToSensor(assisting_sensor, 'close_valve')
+					format(sensor_to_help.sensor_id, assisting_sensor))
+				for connected_sensor in self.connected_sensors:
+					if connected_sensor['sensor_id'] == assisting_sensor:
+						self.sendCommandToSensor(connected_sensor, 'close_valve')
 
 				if len(self.favor_ledger[sensor_to_help.sensor_id]) > 0:
 					self.closeAssistingSensorValves(sensor_to_help)
