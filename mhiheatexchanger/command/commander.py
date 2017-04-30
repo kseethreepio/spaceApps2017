@@ -104,7 +104,7 @@ class MissionControl(object):
 				print(ALERT_CLOSING_HELPER_VALVE.\
 					format(sensor_to_help.sensor_id, assisting_sensor))
 				for connected_sensor in self.connected_sensors:
-					if connected_sensor['sensor_id'] == assisting_sensor:
+					if connected_sensor.sensor_id == assisting_sensor:
 						self.sendCommandToSensor(connected_sensor, 'close_valve')
 
 				if len(self.favor_ledger[sensor_to_help.sensor_id]) > 0:
