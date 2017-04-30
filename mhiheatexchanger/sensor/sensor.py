@@ -174,6 +174,8 @@ class Sensor(object):
     def handleUpperThresholdPassed(self):
         '''Handles case where runTempCheck() determines upper temp threshold passed.'''
 
+        self.has_passed_threshold = True
+
         if not self.temp_sensor_only:
             self.lcd.setColor(255, 0, 0)
             self.lcd.write(TEMP_STRING.format(self.latest_temp_c, self.latest_temp_f))
@@ -184,6 +186,8 @@ class Sensor(object):
 
     def handleLowerThresholdPassed(self):
         '''Handles case where runTempCheck() determines lower temp threshold passed.'''
+
+        self.has_passed_threshold = True
 
         if not self.temp_sensor_only:
             self.lcd.setColor(0, 0, 255)
