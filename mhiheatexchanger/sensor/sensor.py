@@ -213,9 +213,9 @@ class Sensor(object):
 
         # Check whether temp has passed upper or lower threshold
         if self.latest_temp_c >= UTHRESHOLD:
-            handleUpperThresholdPassed()
+            self.handleUpperThresholdPassed()
         elif self.latest_temp_c < LTHRESHOLD:
-            handleLowerThresholdPassed()
+            self.handleLowerThresholdPassed()
         else:
             if not self.temp_sensor_only:
                 if self.has_passed_threshold and self.valve_open:
@@ -224,7 +224,7 @@ class Sensor(object):
 
                     # Also tell mission control that temp is now good, so that
                     # mission control can square up the sensor's ledger
-                    sendSignalToMissionControl(CENTRAL_CMD_MESSAGE_HAPPY)
+                    self.sendSignalToMissionControl(CENTRAL_CMD_MESSAGE_HAPPY)
 
                 self.lcd.setColor(0, 255, 0)
                 self.lcd.write(TEMP_STRING.\
@@ -251,10 +251,10 @@ class Sensor(object):
         '''Handles message/command from central module to open valve.'''
 
         if orders == 'open_valve':
-            openValve()
+            self.openValve()
 
         elif orders == 'close_valve':
-            closeValve()
+            self.closeValve()
 
         return True
 
@@ -266,7 +266,7 @@ class Sensor(object):
             'signal': signal
         }
 
-        commander.receiveRequestFromSensor(request)
+        self.commander.receiveRequestFromSensor(request)
 
         return True
 
@@ -342,7 +342,7 @@ class Sensor(object):
             return False
 
         # Teardown/cleanup
-        del temp  # Delete the temperature sensor object
+        del self.temp  # Delete the temperature sensor object
         if not self.temp_sensor_only:
             self.prepScreen("stop")  # Turn off the display
             self.testMotor()  # FOR DEMO - Run motor test
