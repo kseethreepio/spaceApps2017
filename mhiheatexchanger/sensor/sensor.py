@@ -126,7 +126,7 @@ class Sensor(object):
         # "Date-UTC,Time-UTC,Room,Sensor,TempC,TempF"
         tempRecord = "{0},{1},{2},{3},{4},{5}\n".\
             format(current_date_utc, current_time_utc, self.sensor_room, \
-                self.sensor_name, self.temp_c, self.temp_f)
+                self.sensor_name, self.latest_temp_c, self.latest_temp_f)
 
         # Double-check that path for output exists
         if not os.path.isdir(LOCAL_OUTPUT_PATH):
@@ -176,7 +176,7 @@ class Sensor(object):
 
         if not self.temp_sensor_only:
             self.lcd.setColor(255, 0, 0)
-            self.lcd.write(TEMP_STRING.format(self.temp_c, self.temp_f))
+            self.lcd.write(TEMP_STRING.format(self.latest_temp_c, self.latest_temp_f))
         
         self.sendSignalToMissionControl(CENTRAL_CMD_MESSAGE_HOT)
 
@@ -187,7 +187,7 @@ class Sensor(object):
 
         if not self.temp_sensor_only:
             self.lcd.setColor(0, 0, 255)
-            self.lcd.write(TEMP_STRING.format(self.temp_c, self.temp_f))
+            self.lcd.write(TEMP_STRING.format(self.latest_temp_c, self.latest_temp_f))
         
         self.sendSignalToMissionControl(CENTRAL_CMD_MESSAGE_COLD)
 
