@@ -148,7 +148,7 @@ def openValve(stepperObj):
     return True
 
 
-def closeValve():
+def closeValve(stepperObj):
     '''Activates stepper motor in order to close valve after heat transfer.'''
 
     stepperObj.setDirection(upmULN200XA.ULN200XA_DIR_CCW)
