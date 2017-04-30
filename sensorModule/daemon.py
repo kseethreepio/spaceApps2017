@@ -28,7 +28,8 @@ from __future__ import print_function
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import time, sys, signal, atexit
+import atexit, os, sys, signal, time
+from datetime import datetime
 
 from upm import pyupm_grove as grove
 from upm import pyupm_jhd1313m1 as lcd
@@ -48,6 +49,10 @@ DEBUG = True  # For running sensor in test mode (i.e. for finite period of time)
 
 CENTRAL_CMD_MESSAGE_COLD = "lower_threshold_passed"
 CENTRAL_CMD_MESSAGE_HOT = "upper_threshold_passed"
+
+LOCAL_OUTPUT_PATH = os.path.join(os.path.expanduser("~"),"sensorTemps")
+LOCAL_OUTPUT_FILENAME = "{0}_{1}_{2}_sensorTemps.csv"
+TEMP_RECORD_FILE_HEADER = "Date-UTC,Time-UTC,Room,Sensor,TempC,TempF\n"
 
 
 class Sensor(Object):
@@ -81,6 +86,43 @@ class Sensor(Object):
 
         self.lcd = lcd.Jhd1313m1(0, 0x3E, 0x62)
         self.temp = grove.GroveTemp(self.temp_sensor_pin)  # Create temp sensor obj
+
+    def recordTemp(self):
+        '''Helper method to write temperature readings to file.
+        TODO: Write hsitorical readings to DB (ideally via ORM)
+
+        :return: File handle to output file.
+        '''
+
+        # Info needed for writing file + recording temps
+        current_timestamp = datetime.utcnow()
+        current_date_utc = current_timestamp.strftime("%Y-%d-%m")
+        current_time_utc = current_timestamp.strftime("%H:%M:%S")
+
+        # Prep string to write to file
+        # "Date-UTC,Time-UTC,Room,Sensor,TempC,TempF"
+        tempRecord = "{0},{1},{2},{3},{4},{5}\n".\
+            format(current_date_utc, current_time_utc, self.sensor_room, \
+                self.sensor_name, self.temp_c, self.temp_f)
+
+        # Double-check that path for output exists
+        if not os.path.isdir(LOCAL_OUTPUT_PATH):
+            os.mkdir(LOCAL_OUTPUT_PATH)
+
+        # Prep name of file to write data to
+        output_filename = LOCAL_OUTPUT_FILENAME.\
+            format(current_date_utc, self.sensor_room, self.sensor_name)
+        output_full_path = os.path.join(LOCAL_OUTPUT_PATH, output_filename)
+
+        # If output file doesn't already exist, create it
+        if not os.path.isfile(output_full_path):
+            with open(output_full_path, "w") as f:
+                f.write(TEMP_RECORD_FILE_HEADER + tempRecord)
+        else:
+            with open(output_full_path, "a") as f:
+                f.write(tempRecord)
+
+        return True
 
     def prepScreen(self, command):
         '''Function for clearing and turning the screen on/off.'''
@@ -140,6 +182,8 @@ class Sensor(Object):
         else:
             self.lcd.setColor(0, 255, 0)
             self.lcd.write(TEMP_STRING.format(self.latest_temp_c, self.latest_temp_f))
+
+        self.recordTemp()  # Write output to local file (for historical readings)
 
         return True
 
