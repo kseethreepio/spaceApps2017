@@ -1,6 +1,6 @@
 # Author: "Mars Home Improvement" Space Apps 2017 Team.
 
-from mhiheatexchanger.sensor import Sensor
+from mhiheatexchanger.sensor.sensor import Sensor
 
 ACTIVE_SENSORS = {
 	{
@@ -10,14 +10,14 @@ ACTIVE_SENSORS = {
 		temp_sensor_pin: 0
 	},
 	{
-		sensor_id: 3,
+		sensor_id: 1,
 		sensor_room: "Room_B",
 		sensor_name: "Sensor_1",
 		temp_sensor_pin: 3
 	},
 }
 
-DEBUG = True
+SPACE_APPS_DEMO_VIRTUAL_SENSOR_ID = 1
 
 class CentralCommand(Object):
 	'''Class for the central module that handles incoming requests from sensors,
@@ -37,13 +37,28 @@ class CentralCommand(Object):
 		# Generate list of currently-connected sensors
 		self.connected_sensors = []
 		for sensor in ACTIVE_SENSORS:
-			self.connected_sensors.append(Sensor(\
-				sensor['sensor_room'], sensor['sensor_name'], sensor['sensor_id'], \
-				sensor['temp_sensor_pin']))
+			# Override for Space Apps 2017 demo on single Edison box (Sensor ID 1 
+			# is a 'virtual' sensor module -- it only has a dedicated temp sensor, 
+			# no LCD or stepper motor)
+			if sensor['sensor_id'] == SPACE_APPS_DEMO_VIRTUAL_SENSOR_ID:
+				self.connected_sensors.append(Sensor(\
+					sensor['sensor_room'], sensor['sensor_name'], \
+					sensor['sensor_id'], sensor['temp_sensor_pin'], \
+					temp_sensor_only=True))			
+
+			# Otherwise, set up as a sensor module matching the HW schematic
+			else:
+				self.connected_sensors.append(Sensor(\
+					sensor['sensor_room'], sensor['sensor_name'], \
+					sensor['sensor_id'], sensor['temp_sensor_pin']))
 
 		# Now, start the temp check loop on each active sensor
-		for 
+		for active_sensor in connected_sensors:
+			active_sensor.startSensor()
 
 	@staticmethod
 	def receiveRequestFromSensor(self, request):
+		return False
+
+	def sendCommandToSensor(self, command):
 		return False
