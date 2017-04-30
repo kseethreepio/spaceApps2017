@@ -266,7 +266,7 @@ class Sensor(object):
             'signal': signal
         }
 
-        self.commander.receiveRequestFromSensor(request)
+        self.commander.receiveAlertFromSensor(request)
 
         return True
 
