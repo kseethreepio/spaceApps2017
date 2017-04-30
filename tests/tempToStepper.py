@@ -58,7 +58,7 @@ def main():
     # equivalent Fahrenheit temperature, waiting 5 second between readings
     # if temperature > HTHRESHOLD, turn stepper motor by 1 revolution
     for i in range(0, 10):
-        celsius = temp1.value()
+        celsius = temp.value()
         fahrenheit = celsius * 9.0/5.0 + 32.0;
         print("%d degrees Celsius, or %d degrees Fahrenheit" \
             % (celsius, fahrenheit))
