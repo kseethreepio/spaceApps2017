@@ -29,6 +29,7 @@ from __future__ import print_function
     # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import atexit, os, sys, signal, time
+sys.path.append(os.getcwd())  # Workaround for import errors for MHI module
 from datetime import datetime
 
 from upm import pyupm_grove as grove

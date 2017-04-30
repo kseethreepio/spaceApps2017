@@ -1,22 +1,23 @@
 # Author: "Mars Home Improvement" Space Apps 2017 Team.
 
-import time
+import time, os, sys
+sys.path.append(os.getcwd())  # Workaround for import errors for MHI module
 
 from mhiheatexchanger.sensor.sensor import Sensor,\
 	CENTRAL_CMD_MESSAGE_COLD, CENTRAL_CMD_MESSAGE_HOT, CENTRAL_CMD_MESSAGE_HAPPY
 
 ACTIVE_SENSORS = {
 	{
-		sensor_id: 0,
-		sensor_room: "Room_A",
-		sensor_name: "Sensor_1",
-		temp_sensor_pin: 0
+		'sensor_id': 0,
+		'sensor_room': "Room_A",
+		'sensor_name': "Sensor_1",
+		'temp_sensor_pin': 0
 	},
 	{
-		sensor_id: 1,
-		sensor_room: "Room_B",
-		sensor_name: "Sensor_1",
-		temp_sensor_pin: 3
+		'sensor_id': 1,
+		'sensor_room': "Room_B",
+		'sensor_name': "Sensor_1",
+		'temp_sensor_pin': 3
 	},
 }
 
