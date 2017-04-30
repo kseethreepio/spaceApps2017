@@ -93,17 +93,17 @@ def handleLowerThresholdPassed(tempObj, lcdObj):
 def runTempCheck(tempObj, lcdObj):
     '''Runs iteration of checking temperature sensor for current reading.'''
 
-    celsius = temp.value()
+    celsius = tempObj.value()
     fahrenheit = celsius * 9.0/5.0 + 32.0;
-    temp.fahrenheit = fahrenheit  # temp obj appears to be mutable; storing F val
+    tempObj.fahrenheit = fahrenheit  # temp obj appears to be mutable; storing F val
 
     lcdObj.setCursor(1,0)  # Move cursor to next line, to write out temp
 
     # Check whether temp has passed upper or lower threshold
     if celsius >= UTHRESHOLD:
-        handleUpperThresholdPassed(temp, lcdObj)
+        handleUpperThresholdPassed(tempObj, lcdObj)
     elif (celsius < LTHRESHOLD):
-        handleLowerThresholdPassed(temp, lcdObj)
+        handleLowerThresholdPassed(tempObj, lcdObj)
     else:
         lcdObj.setColor(0, 0, 255)
         lcdObj.write(TEMP_STRING.format(tempObj.value(), tempObj.fahrenheit))
