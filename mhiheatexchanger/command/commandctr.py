@@ -3,7 +3,7 @@
 import time
 
 from mhiheatexchanger.sensor.sensor import Sensor,\
-	CENTRAL_CMD_MESSAGE_COLD, CENTRAL_CMD_MESSAGE_HOT
+	CENTRAL_CMD_MESSAGE_COLD, CENTRAL_CMD_MESSAGE_HOT, CENTRAL_CMD_MESSAGE_HAPPY
 
 ACTIVE_SENSORS = {
 	{
@@ -20,17 +20,20 @@ ACTIVE_SENSORS = {
 	},
 }
 
-VALVE_TRANS_BACKOFF = 1  # Num seconds to wait before checking again whether valves have opened/closed
+ALERT_QUEUE_CHECK_PULSE = 5  # Interval (s) that central module checks for sensor alerts
 
+# Console message strings
 ALERT_SENSOR_HOT = "Sensor {0} too hot. Searching for cooler area..."
 ALERT_SENSOR_COLD = "Sensor {0} too cold. Searching for warmer area..."
 ALERT_FOUND_HELPER_SENSOR = "Sensor {0} to the rescue. Exchanging heat..."
+ALERT_CLOSING_HELPER_VALVE = "Sensor {0} temp is now nominal. Closing sensor {1} valve..."
 ALERT_CHECK_FOR_MORE  = "Checking for more alerts..."
 ALERT_DONE_PROCESSING_QUEUE = "Alert queue has been fully processed."
+SHUTDOWN_MSG = "Shutting down command center..."
 
 SPACE_APPS_DEMO_VIRTUAL_SENSOR_ID = 1
 
-class CentralCommand(Object):
+class MissionControl(Object):
 	'''Class for the central module that handles incoming alerts from sensors,
 	and issues commands for opening valves connected to sensors in the system, for 
 	heat exchange.
@@ -85,17 +88,38 @@ class CentralCommand(Object):
 	def sendCommandToSensor(self, sensor, command):
 		'''Sends command/orders to a given sensor.'''
 
-		sensor.respondToCentralCommand(command)
+		sensor.respondToMissionControl(command)
 
 		return True
+
+	def closeAssistingSensorValves(self, sensor_to_help):
+		if sensor_to_help.sensor_id in self.favor_ledger.keys():
+			if len(self.favor_ledger[sensor_to_help.sensor_id]) > 0:
+				assisting_sensor = self.favor_ledger[sensor_to_help.sensor_id].pop(0)
+				print(ALERT_CLOSING_HELPER_VALVE.\
+					format(sensor_to_help['sensor_id'], assisting_sensor.sensor_id))
+				sendCommandToSensor(assisting_sensor, 'close_valve')
+
+				if len(self.favor_ledger[sensor_to_help.sensor_id]) > 0:
+					closeAssistingSensorValves(sensor_to_help)
+
+		return True
+
+	def checkAlertQueue(self):
+		'''Method for checking the alert queue on demand.'''
+
+		if len(self.alert_queue) > 0:
+			self.processAlertQueue()
+			return True
+		else:
+			return False
 
 	def processAlertQueue(self):
 		'''Goes through queue of alerts from sensors, and decides what action
 		to take. Results in calls to self.sendCommandToSensor().
 
 		Many possible future improvements in terms of algorithms that could be
-		used to optimize the heat exchange between hot/cold sensor areas. Also,
-		add a max wait period for VALVE_TRANS_BACKOFF backoffs.
+		used to optimize the heat exchange between hot/cold sensor areas.
 		'''
 
 		alert_to_process = self.alert_queue.pop(0)
@@ -104,8 +128,12 @@ class CentralCommand(Object):
 		sensor_ask = alert_to_process['signal']
 		sensor_temp_c = sensor_to_help.latest_temp_c
 
+		if sensor_ask == CENTRAL_CMD_MESSAGE_HAPPY:
+			closeAssistingSensorValves(sensor_to_help)
+			return True
+
 		# If the sensor temp is too high, find first sensor with lower temp
-		if sensor_ask == CENTRAL_CMD_MESSAGE_HOT:
+		elif sensor_ask == CENTRAL_CMD_MESSAGE_HOT:
 			print(ALERT_SENSOR_HOT.format(sensor_to_help['sensor_id']))
 			for active_sensor in self.connected_sensors:
 				# Skip the current sensor being helped
@@ -117,10 +145,6 @@ class CentralCommand(Object):
 						print(ALERT_FOUND_HELPER_SENSOR.format(active_sensor['sensor_id']))
 						sendCommandToSensor(sensor_to_help, 'open_valve')
 						sendCommandToSensor(active_sensor, 'open_valve')
-
-						# Wait till valves confirmed open before proceeding
-						if not (sensor_to_help.valve_open and active_sensor.valve_open):
-							time.sleep(VALVE_TRANS_BACKOFF)
 
 					else:
 						active_sensor = None
@@ -139,20 +163,16 @@ class CentralCommand(Object):
 						sendCommandToSensor(sensor_to_help, 'open_valve')
 						sendCommandToSensor(active_sensor, 'open_valve')
 
-						# Wait till valves confirmed open before proceeding
-						if not (sensor_to_help.valve_open and active_sensor.valve_open):
-							time.sleep(VALVE_TRANS_BACKOFF)
-
 					else:
 						active_sensor = None
 
 		if active_sensor:  # If a sensor helped out, update the 'sensor IOU' ledger
-			try:
-				sensors_curr_helping = self.favor_ledger[sensor_to_help.sensor_id]
+			if sensor_to_help.sensor_id in self.favor_ledger.keys():
+				sensors_curr_helping = self.favor_ledger[sensor_to_help.sensor_id]		
 				if active_sensor.sensor_id not in sensors_curr_helping:
 					self.favor_ledger[sensor_to_help.sensor_id].append(active_sensor.sensor_id)
 
-			except KeyError:
+			else:
 				self.favor_ledger[sensor_to_help.sensor_id] = [active_sensor.sensor_id]
 
 		print(ALERT_CHECK_FOR_MORE)
@@ -161,3 +181,23 @@ class CentralCommand(Object):
 		else:
 			print(ALERT_DONE_PROCESSING_QUEUE)
 			return True
+
+def main():
+	'''Main loop for executing command center. To quit, just kill the process
+	(ctrl+c).
+	'''
+
+	houston = MissionControl()
+
+	try:	
+		while True:
+			work_to_do = houston.checkAlertQueue()
+			if not work_to_do:
+				time.sleep(ALERT_QUEUE_CHECK_PULSE)
+
+	except KeyboardInterrupt:
+		print(SHUTDOWN_MSG)
+
+
+if __name__ == '__main__':
+	main()

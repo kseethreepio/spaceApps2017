@@ -49,6 +49,7 @@ DEBUG = True  # For running sensor in test mode (i.e. for finite period of time)
 
 CENTRAL_CMD_MESSAGE_COLD = "lower_threshold_passed"
 CENTRAL_CMD_MESSAGE_HOT = "upper_threshold_passed"
+CENTRAL_CMD_MESSAGE_HAPPY = "no_longer_past_threshold"
 
 ERROR_VALVE_OPEN = "ERROR: Valve already open."
 ERROR_VALVE_CLOSED = "ERROR: Valve already closed."
@@ -72,7 +73,7 @@ class Sensor(Object):
         uppoer or lower threshold (to help track whether to evaluate calling 
         closeValve()).
 
-        :param CentralCommand commander: CentralCommand object instance that 
+        :param MissionControl commander: MissionControl object instance that 
             started the sensor.
         :param str sensor_room: Room name where physical sensor HW module is located.
         :param str sensor_name: Name of individual sensor HW module in the room.
@@ -175,7 +176,7 @@ class Sensor(Object):
             self.lcd.setColor(255, 0, 0)
             self.lcd.write(TEMP_STRING.format(self.temp_c, self.temp_f))
         
-        self.sendSignalToCentralCommand(CENTRAL_CMD_MESSAGE_HOT)
+        self.sendSignalToMissionControl(CENTRAL_CMD_MESSAGE_HOT)
 
         return True
 
@@ -186,9 +187,19 @@ class Sensor(Object):
             self.lcd.setColor(0, 0, 255)
             self.lcd.write(TEMP_STRING.format(self.temp_c, self.temp_f))
         
-        self.sendSignalToCentralCommand(CENTRAL_CMD_MESSAGE_COLD)
+        self.sendSignalToMissionControl(CENTRAL_CMD_MESSAGE_COLD)
 
         return True
+
+    def checkLedger(self):
+        '''Checks to see whether the current sensor has other sensors in the sys
+        actively helping it.
+        '''
+
+        if self.sensor_id in self.commander.favor_ledger.keys():
+            return self.commander.favor_ledger[self.sensor_id]
+        else:
+            return False
 
     def runTempCheck(self):
         '''Runs iteration of checking temperature sensor for current reading.'''
@@ -208,6 +219,10 @@ class Sensor(Object):
                 if self.has_passed_threshold and self.valve_open:
                     self.has_passed_threshold = False  # Reset the flag
                     self.closeValve()  # Now that temp has stabilized, close valve
+
+                    # Also tell mission control that temp is now good, so that
+                    # mission control can square up the sensor's ledger
+                    sendSignalToMissionControl(CENTRAL_CMD_MESSAGE_HAPPY)
 
                 self.lcd.setColor(0, 255, 0)
                 self.lcd.write(TEMP_STRING.\
@@ -230,7 +245,7 @@ class Sensor(Object):
         sys.exit(0)
 
     @staticmethod
-    def respondToCentralCommand(self, orders):
+    def respondToMissionControl(self, orders):
         '''Handles message/command from central module to open valve.'''
 
         if orders == 'open_valve':
@@ -241,7 +256,7 @@ class Sensor(Object):
 
         return True
 
-    def sendSignalToCentralCommand(self, signal):
+    def sendSignalToMissionControl(self, signal):
         '''Sends message to central command indicating that threshold passed.'''
 
         request = {
@@ -256,15 +271,14 @@ class Sensor(Object):
     def openValve(self):
         '''Activates stepper motor in order to open valve for heat transfer.'''
 
-        if not self.valve_open:
+        if not self.valve_open and not waiting:
             self.stepperMotor.setDirection(upmULN200XA.ULN200XA_DIR_CW)
             self.stepperMotor.stepperSteps(STEPPER_STEPS)
             self.valve_open = True
+            return True
         else:
             print(ERROR_VALVE_OPEN)
             return False
-
-        return True
 
     def closeValve(self):
         '''Activates stepper motor in order to close valve after heat transfer.'''
@@ -273,11 +287,10 @@ class Sensor(Object):
             self.stepperMotor.setDirection(upmULN200XA.ULN200XA_DIR_CCW)
             self.stepperMotor.stepperSteps(STEPPER_STEPS)
             self.valve_open = False
+            return True
         else:
             print(ERROR_VALVE_CLOSED)
             return False
-
-        return True
 
     def testMotor(self):
         '''Test function for trying out the sensor module's motor.'''
