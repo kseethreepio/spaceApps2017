@@ -102,7 +102,7 @@ class MissionControl(object):
 			if len(self.favor_ledger[sensor_to_help.sensor_id]) > 0:
 				assisting_sensor = self.favor_ledger[sensor_to_help.sensor_id].pop(0)
 				print(ALERT_CLOSING_HELPER_VALVE.\
-					format(sensor_to_help['sensor_id'], assisting_sensor.sensor_id))
+					format(sensor_to_help.sensor_id, assisting_sensor.sensor_id))
 				sendCommandToSensor(assisting_sensor, 'close_valve')
 
 				if len(self.favor_ledger[sensor_to_help.sensor_id]) > 0:
@@ -139,7 +139,7 @@ class MissionControl(object):
 
 		# If the sensor temp is too high, find first sensor with lower temp
 		elif sensor_ask == CENTRAL_CMD_MESSAGE_HOT:
-			print(ALERT_SENSOR_HOT.format(sensor_to_help['sensor_id']))
+			print(ALERT_SENSOR_HOT.format(sensor_to_help.sensor_id))
 			for active_sensor in self.connected_sensors:
 				# Skip the current sensor being helped
 				if active_sensor.sensor_id == sensor_to_help.sensor_id:
@@ -156,7 +156,7 @@ class MissionControl(object):
 
 		# Else if sensor temp is too low, find sensor with higher temp
 		elif sensor_ask == CENTRAL_CMD_MESSAGE_COLD:
-			print(ALERT_SENSOR_COLD.format(sensor_to_help['sensor_id']))
+			print(ALERT_SENSOR_COLD.format(sensor_to_help.sensor_id))
 			for active_sensor in self.connected_sensors:
 				# Skip the current sensor being helped
 				if active_sensor.sensor_id == sensor_to_help.sensor_id:
