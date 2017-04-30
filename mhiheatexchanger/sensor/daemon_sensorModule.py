@@ -61,16 +61,20 @@ class Sensor(Object):
     reading (in degrees C and F).
     '''
 
-    def __init__(self, sensor_room, sensor_name, sensor_id, temp_sensor_pin):
+    def __init__(self, sensor_room, sensor_name, sensor_id, \
+        temp_sensor_pin, temp_sensor_only=False):
         '''Init method for Sensor object.
 
         Note: 'has_passed_threshold' is a flag for tracking when sensor has passed 
         uppoer or lower threshold (to help track whether to evaluate calling 
         closeValve()).
 
-        :param str sensor_room: Room name where physical sensor HW module is located
-        :param str sensor_name: Name of individual sensor HW module in the room
-        :param int temp_sensor_pin: AIO pin that temp sensor is on (typically 0)
+        :param str sensor_room: Room name where physical sensor HW module is located.
+        :param str sensor_name: Name of individual sensor HW module in the room.
+        :param int temp_sensor_pin: AIO pin that temp sensor is on (typically 0).
+        :param bool temp_sensor_only: Optional param to indicate that the module only
+            has a temperature sensor (typically for demo purposes).
+
         :return: Sensor object
         '''
 
@@ -83,16 +87,19 @@ class Sensor(Object):
         self.has_passed_threshold = False
         self.valve_open = False
 
-        # Instantiate a Stepper motor on a ULN200XA Darlington Motor Driver
-        # This was tested with the Grove Geared Step Motor with Driver
-        # Instantiate a ULN2003XA stepper object
-        self.stepperMotor = upmULN200XA.ULN200XA(4096, 8, 9, 10, 11)
-        atexit.register(self.exitHandler)  # Register exit handlers
-        signal.signal(signal.SIGINT, self.SIGINTHandler)
-        self.stepperMotor.setSpeed(STEPPER_SPEED)
-
-        self.lcd = lcd.Jhd1313m1(0, 0x3E, 0x62)
         self.temp = grove.GroveTemp(self.temp_sensor_pin)  # Create temp sensor obj
+
+        if not self.temp_sensor_only:
+            # Instantiate a Stepper motor on a ULN200XA Darlington Motor Driver
+            # This was tested with the Grove Geared Step Motor with Driver
+            # Instantiate a ULN2003XA stepper object
+            self.stepperMotor = upmULN200XA.ULN200XA(4096, 8, 9, 10, 11)
+            atexit.register(self.exitHandler)  # Register exit handlers
+            signal.signal(signal.SIGINT, self.SIGINTHandler)
+            self.stepperMotor.setSpeed(STEPPER_SPEED)
+
+            # Set up the LCD
+            self.lcd = lcd.Jhd1313m1(0, 0x3E, 0x62)
 
     def recordTemp(self):
         '''Helper method to write temperature readings to file.
@@ -179,7 +186,7 @@ class Sensor(Object):
         self.latest_temp_c = self.temp.value()
         self.latest_temp_f = self.latest_temp_c * 9.0/5.0 + 32.0
 
-        self.lcd.setCursor(1,0)  # Move cursor to next line, to write out temp
+        if not self.temp_sensor_only: self.lcd.setCursor(1,0)
 
         # Check whether temp has passed upper or lower threshold
         if self.latest_temp_c >= UTHRESHOLD:
@@ -187,12 +194,17 @@ class Sensor(Object):
         elif self.latest_temp_c < LTHRESHOLD:
             handleLowerThresholdPassed()
         else:
-            if self.has_passed_threshold and self.valve_open:
-                self.has_passed_threshold = False  # Reset the flag
-                self.closeValve()  # Now that temp has stabilized, close valve
+            if not self.temp_sensor_only:
+                if self.has_passed_threshold and self.valve_open:
+                    self.has_passed_threshold = False  # Reset the flag
+                    self.closeValve()  # Now that temp has stabilized, close valve
 
-            self.lcd.setColor(0, 255, 0)
-            self.lcd.write(TEMP_STRING.format(self.latest_temp_c, self.latest_temp_f))
+                self.lcd.setColor(0, 255, 0)
+                self.lcd.write(TEMP_STRING.\
+                    format(self.latest_temp_c, self.latest_temp_f))
+
+            else:  # Just reset the flag for the temp_sensor_only case
+                self.has_passed_threshold = False
 
         self.recordTemp()  # Write output to local file (for historical readings)
 
@@ -258,35 +270,29 @@ class Sensor(Object):
     def startSensor(self):
         '''Main loop for checking temperature. Runs indefinitely.'''
 
-        lcd = self.lcd  # Start up the LCD
-        temp = self.temp  # Start the temp sensor
-
         try:
             # Read temperature, waiting POLL_INTERVAL seconds between readings
             if not DEBUG:  # In standard operating mode, run indefinitely
                 while True:
                     self.runTempCheck()
-                    # TODO: Handle signal from central module to activate motor/open value
                     time.sleep(POLL_INTERVAL)
 
         except KeyboardInterrupt:
             # Teardown/cleanup
-            del temp  # Delete the temperature sensor object
-            self.prepScreen("stop")  # Turn off the display
+            del self.temp  # Delete the temperature sensor object
+            if not self.temp_sensor_only:  # Close valve, turn off display
+                if self.valve_open: self.closeValve()
+                self.prepScreen("stop")
 
         return True        
 
     def runSensorTest(self):
         '''Main loop for checking temperature. Runs for TEST_RUN_LENGTH seconds.'''
 
-        lcd = self.lcd  # Start up the LCD
-        temp = self.temp  # Start the temp sensor
-
         if DEBUG:
             print("Starting temp check cycle...")
             for i in range(0, TEST_RUN_LENGTH / POLL_INTERVAL):
-                self.runTempCheck(temp, lcd)
-                # TODO: Handle signal from central module to activate motor/open value
+                self.runTempCheck()
                 print("Sleeping till next temp check...")
                 time.sleep(POLL_INTERVAL)
         else:
@@ -295,7 +301,8 @@ class Sensor(Object):
 
         # Teardown/cleanup
         del temp  # Delete the temperature sensor object
-        self.prepScreen("stop")  # Turn off the display
-        self.testMotor()  # FOR DEMO - Run motor test
+        if not self.temp_sensor_only:
+            self.prepScreen("stop")  # Turn off the display
+            self.testMotor()  # FOR DEMO - Run motor test
 
         return True       
