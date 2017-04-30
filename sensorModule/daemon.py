@@ -64,6 +64,10 @@ class Sensor(Object):
     def __init__(self, sensor_room, sensor_name, temp_sensor_pin):
         '''Init method for Sensor object.
 
+        Note: 'has_passed_threshold' is a flag for tracking when sensor has passed 
+        uppoer or lower threshold (to help track whether to evaluate calling 
+        closeValve()).
+
         :param str sensor_room: Room name where physical sensor HW module is located
         :param str sensor_name: Name of individual sensor HW module in the room
         :param int temp_sensor_pin: AIO pin that temperature sensor is on (should be 0)
@@ -75,6 +79,8 @@ class Sensor(Object):
         self.temp_sensor_pin = temp_sensor_pin
         self.latest_temp_c = None
         self.latest_temp_f = None
+        self.has_passed_threshold = False
+        self.valve_open = False
 
         # Instantiate a Stepper motor on a ULN200XA Darlington Motor Driver
         # This was tested with the Grove Geared Step Motor with Driver
@@ -180,6 +186,10 @@ class Sensor(Object):
         elif self.latest_temp_c < LTHRESHOLD:
             handleLowerThresholdPassed()
         else:
+            if self.has_passed_threshold and self.valve_open:
+                self.has_passed_threshold = False  # Reset the flag
+                self.closeValve()  # Now that temp has stabilized, close valve
+
             self.lcd.setColor(0, 255, 0)
             self.lcd.write(TEMP_STRING.format(self.latest_temp_c, self.latest_temp_f))
 
@@ -198,13 +208,12 @@ class Sensor(Object):
 
     @staticmethod
     def respondToCentralCommand(self, orders):
-        '''Handles message/command from central module to open valve.'''
+        '''Handles message/command from central module to open valve. For now,
+        only expected orders are to open the valve.
+        '''
 
         if orders == 'open_valve':
             openValve()
-
-        elif orders == 'close_valve':
-            close_valve()
 
         return True
 
@@ -220,6 +229,7 @@ class Sensor(Object):
 
         self.stepperMotor.setDirection(upmULN200XA.ULN200XA_DIR_CW)
         self.stepperMotor.stepperSteps(STEPPER_STEPS)
+        self.valve_open = True
 
         return True
 
