@@ -44,7 +44,7 @@ STEPPER_SPEED = 8  # RPMs
 STEPPER_STEPS = 4096
 
 POLL_INTERVAL = 2  # Seconds
-TEST_RUN_LENGTH = 30  # Seconds; if running code for finite time for testing
+TEST_RUN_LENGTH = 90  # Seconds; if running code for finite time for testing
 DEBUG = True  # For running sensor in test mode (i.e. for finite period of time)
 
 CENTRAL_CMD_MESSAGE_COLD = "lower_threshold_passed"
@@ -61,7 +61,7 @@ class Sensor(Object):
     reading (in degrees C and F).
     '''
 
-    def __init__(self, sensor_room, sensor_name, temp_sensor_pin):
+    def __init__(self, sensor_room, sensor_name, sensor_id, temp_sensor_pin):
         '''Init method for Sensor object.
 
         Note: 'has_passed_threshold' is a flag for tracking when sensor has passed 
@@ -70,12 +70,13 @@ class Sensor(Object):
 
         :param str sensor_room: Room name where physical sensor HW module is located
         :param str sensor_name: Name of individual sensor HW module in the room
-        :param int temp_sensor_pin: AIO pin that temperature sensor is on (should be 0)
+        :param int temp_sensor_pin: AIO pin that temp sensor is on (typically 0)
         :return: Sensor object
         '''
 
         self.sensor_room = sensor_room
         self.sensor_name = sensor_name
+        self.sensor_id = sensor_id
         self.temp_sensor_pin = temp_sensor_pin
         self.latest_temp_c = None
         self.latest_temp_f = None
@@ -254,34 +255,47 @@ class Sensor(Object):
 
         return True
 
+    def startSensor(self):
+        '''Main loop for checking temperature. Runs indefinitely.'''
 
-def main():
-    '''Main loop.'''
+        lcd = self.lcd  # Start up the LCD
+        temp = self.temp  # Start the temp sensor
 
-    sensor = Sensor("Room_A", "Sensor_1", 0)
-    lcd = sensor.lcd  # Start up the LCD
-    temp = sensor.temp  # Start the temp sensor
+        try:
+            # Read temperature, waiting POLL_INTERVAL seconds between readings
+            if not DEBUG:  # In standard operating mode, run indefinitely
+                while True:
+                    self.runTempCheck()
+                    # TODO: Handle signal from central module to activate motor/open value
+                    time.sleep(POLL_INTERVAL)
 
-    # Read temperature, waiting 1 s between readings, providing temp in deg C/F
-    if not DEBUG:  # In standard operating mode, run indefinitely
-        while True:
-            sensor.runTempCheck()
-            # TODO: Handle signal from central module to activate motor/open value
-            time.sleep(POLL_INTERVAL)
+        except KeyboardInterrupt:
+            # Teardown/cleanup
+            del temp  # Delete the temperature sensor object
+            self.prepScreen("stop")  # Turn off the display
 
-    elif DEBUG:  # Run temp check loop for TEST_RUN_LENGTH seconds
-        print("Starting temp check cycle...")
-        for i in range(0, TEST_RUN_LENGTH / POLL_INTERVAL):
-            sensor.runTempCheck(temp, lcd)
-            # TODO: Handle signal from central module to activate motor/open value
-            print("Sleeping till next temp check...")
-            time.sleep(POLL_INTERVAL)
+        return True        
 
-    # Teardown/cleanup
-    del temp  # Delete the temperature sensor object
-    sensor.prepScreen("stop")  # Turn off the display
-    sensor.testMotor()  # FOR DEMO - Run motor test
+    def runSensorTest(self):
+        '''Main loop for checking temperature. Runs for TEST_RUN_LENGTH seconds.'''
 
+        lcd = self.lcd  # Start up the LCD
+        temp = self.temp  # Start the temp sensor
 
-if __name__ == '__main__':
-    main()
+        if DEBUG:
+            print("Starting temp check cycle...")
+            for i in range(0, TEST_RUN_LENGTH / POLL_INTERVAL):
+                self.runTempCheck(temp, lcd)
+                # TODO: Handle signal from central module to activate motor/open value
+                print("Sleeping till next temp check...")
+                time.sleep(POLL_INTERVAL)
+        else:
+            print("ERROR: Please set DEBUG flag to True, then try again.")
+            return False
+
+        # Teardown/cleanup
+        del temp  # Delete the temperature sensor object
+        self.prepScreen("stop")  # Turn off the display
+        self.testMotor()  # FOR DEMO - Run motor test
+
+        return True       
