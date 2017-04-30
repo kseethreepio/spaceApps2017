@@ -28,41 +28,35 @@ import time, sys, signal, atexit
 from upm import pyupm_uln200xa as upmULN200XA
 from upm import pyupm_grove as grove
 
-HTHRESHOLD = 20
-#LTHRESHOLD = 20
+HTHRESHOLD = 20 # temperature threshold (high) in celsius
+
 def main():
     # Create the temperature sensor object using AIO pin 0
-    temp1 = grove.GroveTemp(0)
-    temp3 = grove.GroveTemp(3)
-    print(temp1.name())
+    temp = grove.GroveTemp(0)
+    #print(temp.name())
 
     # Instantiate a Stepper motor on a ULN200XA Darlington Motor Driver
     # This was tested with the Grove Geared Step Motor with Driver
-
     # Instantiate a ULN2003XA stepper object
     myUln200xa = upmULN200XA.ULN200XA(4096, 8, 9, 10, 11)
-
     ## Exit handlers ##
     # This stops python from printing a stacktrace when you hit control-C
     def SIGINTHandler(signum, frame):
         raise SystemExit
-
     # This lets you run code on exit,
     # including functions from myUln200xa
     def exitHandler():
         print("Exiting")
-        sys.exit(0)
-    
+        sys.exit(0)    
     # Register exit handlers
     atexit.register(exitHandler)
-    signal.signal(signal.SIGINT, SIGINTHandler)
-    
-    
+    signal.signal(signal.SIGINT, SIGINTHandler)   
     myUln200xa.setSpeed(5) # 5 RPMs
     myUln200xa.setDirection(upmULN200XA.ULN200XA_DIR_CW)
     
     # Read the temperature ten times, printing both the Celsius and
-    # equivalent Fahrenheit temperature, waiting one second between readings
+    # equivalent Fahrenheit temperature, waiting 5 second between readings
+    # if temperature > HTHRESHOLD, turn stepper motor by 1 revolution
     for i in range(0, 10):
         celsius = temp1.value()
         fahrenheit = celsius * 9.0/5.0 + 32.0;
