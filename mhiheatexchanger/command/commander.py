@@ -3,7 +3,7 @@
 import time, os, sys
 sys.path.append(os.getcwd())  # Workaround for import errors for MHI module
 
-from mhiheatexchanger.sensor.sensor import Sensor,\
+from mhiheatexchanger.sensor.sensor import Sensor, DEBUG, \
 	CENTRAL_CMD_MESSAGE_COLD, CENTRAL_CMD_MESSAGE_HOT, CENTRAL_CMD_MESSAGE_HAPPY
 
 ACTIVE_SENSORS = [
@@ -30,6 +30,7 @@ ALERT_FOUND_HELPER_SENSOR = "Sensor {0} to the rescue. Exchanging heat..."
 ALERT_CLOSING_HELPER_VALVE = "Sensor {0} temp is now nominal. Closing sensor {1} valve..."
 ALERT_CHECK_FOR_MORE  = "Checking for more alerts..."
 ALERT_DONE_PROCESSING_QUEUE = "Alert queue has been fully processed."
+NO_WORK_MSG = "Queue empty: No work to do."
 SHUTDOWN_MSG = "Shutting down command center..."
 
 SPACE_APPS_DEMO_VIRTUAL_SENSOR_ID = 1
@@ -72,7 +73,10 @@ class MissionControl(object):
 
 		# Now, start the temp check loop on each active sensor
 		for active_sensor in self.connected_sensors:
-			active_sensor.startSensor()
+			if DEBUG:
+				active_sensor.runSensorTest()
+			else:
+				active_sensor.startSensor()
 
 	@staticmethod
 	def receiveAlertFromSensor(self, alert):
@@ -194,6 +198,7 @@ def main():
 		while True:
 			work_to_do = houston.checkAlertQueue()
 			if not work_to_do:
+				print(NO_WORK_MSG)
 				time.sleep(ALERT_QUEUE_CHECK_PULSE)
 
 	except KeyboardInterrupt:
