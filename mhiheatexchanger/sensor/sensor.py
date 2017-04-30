@@ -46,7 +46,7 @@ STEPPER_STEPS = 4096
 
 POLL_INTERVAL = 10  # Seconds
 TEST_RUN_LENGTH = 120  # Seconds; if running code for finite time for testing
-DEBUG = True  # For running sensor in test mode (i.e. for finite period of time)
+DEBUG = False  # For running sensor in test mode (i.e. for finite period of time)
 
 CENTRAL_CMD_MESSAGE_COLD = "lower_threshold_passed"
 CENTRAL_CMD_MESSAGE_HOT = "upper_threshold_passed"
