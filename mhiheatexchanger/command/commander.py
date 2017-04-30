@@ -140,7 +140,6 @@ class MissionControl(object):
 			sensor_temp_c = sensor_to_help.latest_temp_c
 
 			if sensor_ask == CENTRAL_CMD_MESSAGE_HAPPY:
-				print()
 				self.closeAssistingSensorValves(sensor_to_help)
 				return True
 

@@ -102,7 +102,8 @@ class Sensor(object):
             # Instantiate a Stepper motor on a ULN200XA Darlington Motor Driver
             # This was tested with the Grove Geared Step Motor with Driver
             # Instantiate a ULN2003XA stepper object
-            self.stepperMotor = upmULN200XA.ULN200XA(4096, 8, 9, 10, 11)
+            # Note: The other numbers are pins it's connected to on the board
+            self.stepperMotor = upmULN200XA.ULN200XA(STEPPER_STEPS, 8, 9, 10, 11)
             atexit.register(self.exitHandler)  # Register exit handlers
             signal.signal(signal.SIGINT, self.SIGINTHandler)
             self.stepperMotor.setSpeed(STEPPER_SPEED)
