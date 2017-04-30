@@ -138,7 +138,8 @@ class MissionControl(object):
 			sensor_temp_c = sensor_to_help.latest_temp_c
 
 			if sensor_ask == CENTRAL_CMD_MESSAGE_HAPPY:
-				closeAssistingSensorValves(sensor_to_help)
+				print()
+				self.closeAssistingSensorValves(sensor_to_help)
 				return True
 
 			# If the sensor temp is too high, find first sensor with lower temp
