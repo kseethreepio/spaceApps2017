@@ -36,8 +36,8 @@ from upm import pyupm_uln200xa as upmULN200XA
 
 UTHRESHOLD = 25  # Deg C
 LTHRESHOLD = 16  # Deg C
+TEMP_LABEL_STRING = "Current temp:"
 TEMP_STRING = "{0} C / {1} F"
-TEMP_SENSOR_PIN = 0
 
 STEPPER_SPEED = 8  # RPMs
 STEPPER_STEPS = 4096
@@ -51,11 +51,23 @@ CENTRAL_CMD_MESSAGE_HOT = "upper_threshold_passed"
 
 
 class Sensor(Object):
-    '''TODO'''
+    '''Sensor module object. Exposes attributes/properties for accessing the
+    sensor module's temperature sensor, LCD, stepper motor, and most recent temp 
+    reading (in degrees C and F).
+    '''
 
-    def __init__(self, sensor_room, sensor_name):
-        self.sensor_room = sensorRoom
-        self.sensor_name = sensorName
+    def __init__(self, sensor_room, sensor_name, temp_sensor_pin):
+        '''Init method for Sensor object.
+
+        :param str sensor_room: Room name where physical sensor HW module is located
+        :param str sensor_name: Name of individual sensor HW module in the room
+        :param int temp_sensor_pin: AIO pin that temperature sensor is on (should be 0)
+        :return: Sensor object
+        '''
+
+        self.sensor_room = sensor_room
+        self.sensor_name = sensor_name
+        self.temp_sensor_pin = temp_sensor_pin
         self.latest_temp_c = None
         self.latest_temp_f = None
 
@@ -68,7 +80,7 @@ class Sensor(Object):
         self.stepperMotor.setSpeed(STEPPER_SPEED)
 
         self.lcd = lcd.Jhd1313m1(0, 0x3E, 0x62)
-        self.temp = grove.GroveTemp(TEMP_SENSOR_PIN)  # Create the temperature sensor obj via AIO pin 0
+        self.temp = grove.GroveTemp(self.temp_sensor_pin)  # Create temp sensor obj
 
     def prepScreen(self, command):
         '''Function for clearing and turning the screen on/off.'''
@@ -82,7 +94,7 @@ class Sensor(Object):
             # Write initial message to LCD
             self.lcd.setCursor(0,0)  # Set LCD cursory to write out the top line
             self.lcd.setColor(0, 0, 0)  # By default, set LCD color to white
-            self.lcd.write("Current temp:")  # Write out label for temperature
+            self.lcd.write(TEMP_LABEL_STRING)  # Write out label for temperature
 
             return True
 
@@ -192,7 +204,7 @@ class Sensor(Object):
 def main():
     '''Main loop.'''
 
-    sensor = Sensor()
+    sensor = Sensor("Room_A", "Sensor_1", 0)
     lcd = sensor.lcd  # Start up the LCD
     temp = sensor.temp  # Start the temp sensor
 
