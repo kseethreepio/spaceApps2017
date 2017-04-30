@@ -60,7 +60,7 @@ LOCAL_OUTPUT_FILENAME = "{0}_{1}_{2}_sensorTemps.csv"
 TEMP_RECORD_FILE_HEADER = "Date-UTC,Time-UTC,Room,Sensor,TempC,TempF\n"
 
 
-class Sensor(Object):
+class Sensor(object):
     '''Sensor module object. Exposes attributes/properties for accessing the
     sensor module's temperature sensor, LCD, stepper motor, and most recent temp 
     reading (in degrees C and F).

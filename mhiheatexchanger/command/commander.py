@@ -6,7 +6,7 @@ sys.path.append(os.getcwd())  # Workaround for import errors for MHI module
 from mhiheatexchanger.sensor.sensor import Sensor,\
 	CENTRAL_CMD_MESSAGE_COLD, CENTRAL_CMD_MESSAGE_HOT, CENTRAL_CMD_MESSAGE_HAPPY
 
-ACTIVE_SENSORS = {
+ACTIVE_SENSORS = [
 	{
 		'sensor_id': 0,
 		'sensor_room': "Room_A",
@@ -18,8 +18,8 @@ ACTIVE_SENSORS = {
 		'sensor_room': "Room_B",
 		'sensor_name': "Sensor_1",
 		'temp_sensor_pin': 3
-	},
-}
+	}
+]
 
 ALERT_QUEUE_CHECK_PULSE = 5  # Interval (s) that central module checks for sensor alerts
 
@@ -34,7 +34,7 @@ SHUTDOWN_MSG = "Shutting down command center..."
 
 SPACE_APPS_DEMO_VIRTUAL_SENSOR_ID = 1
 
-class MissionControl(Object):
+class MissionControl(object):
 	'''Class for the central module that handles incoming alerts from sensors,
 	and issues commands for opening valves connected to sensors in the system, for 
 	heat exchange.
@@ -59,7 +59,7 @@ class MissionControl(Object):
 			# is a 'virtual' sensor module -- it only has a dedicated temp sensor, 
 			# no LCD or stepper motor)
 			if sensor['sensor_id'] == SPACE_APPS_DEMO_VIRTUAL_SENSOR_ID:
-				self.connected_sensors.append(Sensor(\
+				self.connected_sensors.append(Sensor(self, \
 					sensor['sensor_room'], sensor['sensor_name'], \
 					sensor['sensor_id'], sensor['temp_sensor_pin'], \
 					temp_sensor_only=True))			
