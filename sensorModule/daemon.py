@@ -90,7 +90,7 @@ def handleLowerThresholdPassed(tempObj, lcdObj):
     return False
 
 
-def runTempCheck(temp):
+def runTempCheck(tempObj, lcdObj):
     '''Runs iteration of checking temperature sensor for current reading.'''
 
     celsius = temp.value()
@@ -132,7 +132,7 @@ def closeValve():
 def main():
     '''Main loop.'''
 
-    lcdObj = prepScreen("start")  # Start up the LCD
+    lcd = prepScreen("start")  # Start up the LCD
     temp = grove.GroveTemp(0)  # Create the temperature sensor obj via AIO pin 0
 
     # Read temperature, waiting 1 s between readings, providing temp in deg C/F
@@ -144,13 +144,13 @@ def main():
 
     elif DEBUG:  # Run temp check loop for TEST_RUN_LENGTH seconds
         for i in range(0, TEST_RUN_LENGTH):
-            runTempCheck(temp)
+            runTempCheck(temp, lcd)
             # TODO: Handle signal from central module to activate motor/open value
             time.sleep(1)
 
     # Teardown/cleanup
     del temp  # Delete the temperature sensor object
-    prepScreen("stop", lcdObj)  # Turn off the display
+    prepScreen("stop", lcd)  # Turn off the display
 
 
 if __name__ == '__main__':
