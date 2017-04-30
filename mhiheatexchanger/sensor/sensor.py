@@ -273,7 +273,7 @@ class Sensor(object):
     def openValve(self):
         '''Activates stepper motor in order to open valve for heat transfer.'''
 
-        if not self.valve_open:
+        if not self.valve_open and not self.temp_sensor_only:
             self.stepperMotor.setDirection(upmULN200XA.ULN200XA_DIR_CW)
             self.stepperMotor.stepperSteps(STEPPER_STEPS)
             self.valve_open = True
@@ -285,7 +285,7 @@ class Sensor(object):
     def closeValve(self):
         '''Activates stepper motor in order to close valve after heat transfer.'''
 
-        if self.valve_open:
+        if self.valve_open and not self.temp_sensor_only:
             self.stepperMotor.setDirection(upmULN200XA.ULN200XA_DIR_CCW)
             self.stepperMotor.stepperSteps(STEPPER_STEPS)
             self.valve_open = False
