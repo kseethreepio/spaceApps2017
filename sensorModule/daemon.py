@@ -102,7 +102,7 @@ def runTempCheck(tempObj, lcdObj):
     # Check whether temp has passed upper or lower threshold
     if celsius >= UTHRESHOLD:
         handleUpperThresholdPassed(tempObj, lcdObj)
-    elif (celsius < LTHRESHOLD):
+    elif celsius < LTHRESHOLD:
         handleLowerThresholdPassed(tempObj, lcdObj)
     else:
         lcdObj.setColor(0, 255, 0)
