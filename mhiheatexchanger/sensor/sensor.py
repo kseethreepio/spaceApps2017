@@ -36,7 +36,7 @@ from upm import pyupm_grove as grove
 from upm import pyupm_jhd1313m1 as lcd
 from upm import pyupm_uln200xa as upmULN200XA
 
-UTHRESHOLD = 25  # Deg C
+UTHRESHOLD = 24  # Deg C
 LTHRESHOLD = 16  # Deg C
 TEMP_LABEL_STRING = "Current temp:"
 TEMP_STRING = "{0} C / {1} F"
@@ -313,6 +313,8 @@ class Sensor(object):
         try:
             # Read temperature, waiting POLL_INTERVAL seconds between readings
             if not DEBUG:  # In standard operating mode, run indefinitely
+                if not self.temp_sensor_only:
+                    self.prepScreen("start")    
                 while True:
                     self.runTempCheck()
                     time.sleep(POLL_INTERVAL)
