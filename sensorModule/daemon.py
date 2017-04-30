@@ -37,7 +37,7 @@ LTHRESHOLD = 16  # Deg C
 
 TEMP_STRING = "{0} C / {1} F"
 
-POLL_INTERVAL = 1  # Seconds
+POLL_INTERVAL = 2  # Seconds
 TEST_RUN_LENGTH = 30  # Seconds; if running code for finite time for testing
 DEBUG = True  # For running sensor in test mode (i.e. for finite period of time)
 
@@ -140,13 +140,13 @@ def main():
         while True:
             runTempCheck(temp)
             # TODO: Handle signal from central module to activate motor/open value
-            time.sleep(1)
+            time.sleep(POLL_INTERVAL)
 
     elif DEBUG:  # Run temp check loop for TEST_RUN_LENGTH seconds
-        for i in range(0, TEST_RUN_LENGTH):
+        for i in range(0, TEST_RUN_LENGTH / POLL_INTERVAL):
             runTempCheck(temp, lcd)
             # TODO: Handle signal from central module to activate motor/open value
-            time.sleep(1)
+            time.sleep(POLL_INTERVAL)
 
     # Teardown/cleanup
     del temp  # Delete the temperature sensor object
